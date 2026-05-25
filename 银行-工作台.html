@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>银行工作台 — 长白山金融化平台</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+:root{
+  --bg:#f0f2f5;--bg-white:#fff;--bg-hover:#f7f8fa;--bg-active:#e8f0fe;
+  --primary:#1a6fff;--primary-light:#e8f0fe;--primary-dark:#1557cc;
+  --success:#00a870;--warn:#ed7b2f;--danger:#e34d59;
+  --text:#1f2937;--text-secondary:#6b7280;--text-muted:#9ca3af;
+  --border:#e5e7eb;--border-light:#f0f1f3;
+  --font:'PingFang SC','Microsoft YaHei',-apple-system,sans-serif;
+  --radius:4px;--shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;overflow:hidden;width:100vw;height:100vh}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+#topnav{height:48px;background:var(--bg-white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:0;box-shadow:var(--shadow);position:relative;z-index:100}
+#topnav .sys-name{font-size:15px;font-weight:600;color:var(--text);margin-right:24px;white-space:nowrap}
+#topnav .sys-name .ver{font-size:11px;color:var(--text-muted);font-weight:400;margin-left:6px}
+#topnav .tn-item{padding:0 16px;height:48px;line-height:48px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+#topnav .tn-item:hover{color:var(--text)}
+#topnav .tn-item.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500}
+#topnav .tn-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+#topnav .tn-badge{position:relative;cursor:pointer;padding:4px 8px;border-radius:var(--radius);font-size:12px;color:var(--text-secondary)}
+#topnav .tn-badge:hover{background:var(--bg-hover)}
+#topnav .tn-badge .cnt{background:var(--danger);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px}
+#topnav .tn-user{font-size:13px;color:var(--text);cursor:pointer;padding:4px 8px;border-radius:var(--radius)}
+#topnav .tn-user:hover{background:var(--bg-hover)}
+#layout{display:flex;height:calc(100vh - 48px)}
+#sidebar{width:200px;background:var(--bg-white);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:8px 0;flex-shrink:0;overflow-y:auto}
+.sm-group{padding:4px 0}
+.sm-group-title{padding:8px 20px 4px;font-size:11px;color:var(--text-muted);font-weight:500}
+.sm-item{display:flex;align-items:center;gap:10px;padding:9px 20px;margin:1px 8px;border-radius:var(--radius);cursor:pointer;color:var(--text-secondary);font-size:13px;transition:all .12s;white-space:nowrap}
+.sm-item:hover{background:var(--bg-hover);color:var(--text)}
+.sm-item.active{background:var(--primary-light);color:var(--primary);font-weight:500}
+.sm-item .sm-badge{margin-left:auto;font-size:11px;background:var(--danger);color:#fff;padding:1px 7px;border-radius:10px;min-width:20px;text-align:center}
+#main{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+.page-hdr{display:flex;align-items:center;justify-content:space-between}
+.page-hdr h2{font-size:18px;font-weight:600}
+.breadcrumb{font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.card{background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-hdr{padding:12px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:14px}
+.card-body{padding:16px}.card-body.nopad{padding:0}
+.stats-row{display:flex;gap:12px}
+.stat-card{flex:1;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.stat-card .st-label{font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.stat-card .st-val{font-size:24px;font-weight:700}
+.stat-card .st-sub{font-size:11px;color:var(--text-secondary);margin-top:4px}
+.st-up{color:var(--success)}.st-down{color:var(--danger)}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:10px 12px;background:#fafbfc;border-bottom:1px solid var(--border);font-weight:500;color:var(--text-secondary);font-size:12px;white-space:nowrap}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border-light)}
+.data-table tr:hover td{background:var(--bg-hover);cursor:pointer}
+.tag{padding:2px 8px;border-radius:2px;font-size:11px;font-weight:500;display:inline-block}
+.tag-blue{background:#e8f0fe;color:#1a6fff}.tag-green{background:#e6f7f0;color:#00a870}.tag-orange{background:#fef3e6;color:#ed7b2f}.tag-red{background:#fde8ea;color:#e34d59}.tag-gray{background:#f0f1f3;color:#6b7280}
+.btn{padding:7px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:1px solid transparent;font-family:var(--font);transition:all .12s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:var(--bg-white);color:var(--primary);border-color:var(--primary)}
+.btn-outline:hover{background:var(--primary-light)}
+.btn-default{background:var(--bg-white);color:var(--text);border-color:var(--border)}
+.btn-default:hover{background:var(--bg-hover)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success)}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
+.form-input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);color:var(--text)}
+.form-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-light)}
+.form-input:disabled{background:#f5f6f8;color:var(--text-muted)}
+.ltv-bar{height:8px;background:var(--border-light);border-radius:4px;margin-top:4px;position:relative}
+.ltv-bar .fill{height:100%;border-radius:4px;transition:width .3s}
+.ltv-bar .marker{position:absolute;top:-2px;width:2px;height:12px;background:var(--danger);border-radius:1px}
+.ltv-bar .marker-label{position:absolute;top:10px;font-size:9px;color:var(--danger);transform:translateX(-50%)}
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 24px;border-radius:var(--radius);font-size:13px;z-index:2000;opacity:0;transition:opacity .25s;pointer-events:none;white-space:pre-line}
+#toast.show{opacity:1}
+#toast.success{background:var(--success)}
+#toast.error{background:var(--danger)}
+.form-row{display:flex;gap:12px}
+.form-row>*{flex:1}
+.cat-switch{display:inline-flex;background:var(--bg);border-radius:4px;padding:2px;gap:0}
+.cat-switch .cat-pill{padding:5px 14px;border-radius:3px;cursor:pointer;font-size:12px;color:var(--text-secondary);transition:all .15s;white-space:nowrap;border:none;background:transparent;font-family:var(--font)}
+.cat-switch .cat-pill:hover{color:var(--text)}
+.cat-switch .cat-pill.active{background:var(--bg-white);color:var(--primary);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,0.08)}
+</style>
+</head>
+<body>
+
+<div id="topnav">
+  <span class="sys-name">长白山金融化平台<span class="ver">v1.0  ·  银行端</span></span>
+  <span class="tn-item active">业务处理</span>
+  <span class="tn-item" onclick="window.open('林企参农-工作台.html','_blank')">资产持有方</span>
+  <span class="tn-item" onclick="window.open('评估师-工作台.html','_blank')">评估师端</span>
+  <span class="tn-right">
+    <div class="cat-switch" style="margin-right:8px">
+      <button class="cat-pill active" id="bcat-ginseng" onclick="switchCategoryUI('ginseng')">🌿 林下参</button>
+      <button class="cat-pill" id="bcat-fungi" onclick="switchCategoryUI('fungi')">🍄 桑黄/灵芝</button>
+    </div>
+    <span class="tn-badge" onclick="switchPage('alerts')">预警<span class="cnt">3</span></span>
+    <span class="tn-badge">消息<span class="cnt">5</span></span>
+    <span class="tn-user">吉林银行长白山支行 &#9662;</span>
+  </span>
+</div>
+
+<div id="layout">
+  <div id="sidebar">
+    <div class="sm-group">
+      <div class="sm-item active" onclick="switchPage('overview')" data-page="overview">工作台概览</div>
+    </div>
+    <div class="sm-group">
+      <div class="sm-group-title">贷款审批</div>
+      <div class="sm-item" onclick="switchPage('review')" data-page="review">待审批申请<span class="sm-badge">3</span></div>
+      <div class="sm-item" onclick="switchPage('history')" data-page="history">审批历史</div>
+    </div>
+    <div class="sm-group">
+      <div class="sm-group-title">贷后管理</div>
+      <div class="sm-item" onclick="switchPage('ltv')" data-page="ltv">LTV监控</div>
+      <div class="sm-item" onclick="switchPage('alerts')" data-page="alerts">预警处置<span class="sm-badge">3</span></div>
+    </div>
+    <div class="sm-group">
+      <div class="sm-group-title">工具</div>
+      <div class="sm-item" onclick="switchPage('verify')" data-page="verify">存证查验</div>
+      <div class="sm-item" onclick="switchPage('ltvcalc')" data-page="ltvcalc">LTV试算</div>
+    </div>
+  </div>
+  <div id="main"></div>
+</div>
+<div id="toast"></div>
+
+<script src="shared-data.js"></script>
+<script>
+let currentPage='overview';
+const mainEl=document.getElementById('main');
+
+function onStateSync(state){
+  if(currentPage==='overview') renderOverview();
+  else if(currentPage==='review') renderReview();
+  else if(currentPage && currentPage.indexOf && currentPage.indexOf('detail-')===0) { var id=currentPage.substring(7); renderDetail(id); }
+}
+function onCategorySwitch(cat){
+  document.getElementById('bcat-ginseng').classList.toggle('active',cat==='ginseng');
+  document.getElementById('bcat-fungi').classList.toggle('active',cat==='fungi');
+}
+function switchCategoryUI(cat){
+  switchCategory(cat);
+  onCategorySwitch(cat);
+  renderPage(currentPage);
+}
+function filteredApps(){
+  return applications.filter(function(a){return a.cat===($S.category==='fungi'?'fungi':'ginseng')});
+}
+function filteredLoans(){
+  return ltvLoans.filter(function(l){return l.cat===($S.category==='fungi'?'fungi':'ginseng')});
+}
+
+const applications=[
+  {cat:'ginseng',id:'LA-20260518-0037',asset:'A地块·12年参龄',applicant:'长白山参业有限公司',bank:'吉林银行',amount:637,ltv:60,term:3,date:'2026-05-18',status:'pending',sv:88.5,value:1062,certOk:true,dataOk:true,hash:'0xa3f2b8c1d4e5f6a7'},
+  {cat:'ginseng',id:'LA-20260515-0031',asset:'新开河地块·9年参龄',applicant:'通化参业合作社',bank:'吉林银行',amount:480,ltv:58,term:5,date:'2026-05-15',status:'pending',sv:81.2,value:828,certOk:true,dataOk:true,hash:'0xb8c2d3e4f5a6b7c8'},
+  {cat:'ginseng',id:'LA-20260510-0028',asset:'B地块·8年参龄',applicant:'长白山参业有限公司',bank:'农业银行',amount:520,ltv:60,term:3,date:'2026-05-10',status:'supplement',sv:72.3,value:868,certOk:true,dataOk:false,hash:'0xc1d2e3f4a5b6c7d8'},
+  {cat:'fungi',id:'LA-20260508-0021',asset:'大棚1号·桑黄批次7',applicant:'通化参业合作社',bank:'吉林银行',amount:990,ltv:60,term:2,date:'2026-05-08',status:'pending',sv:92.0,value:1650,certOk:true,dataOk:true,hash:'0xb7d3e5f2a1c4d6e8'},
+  {cat:'fungi',id:'LA-20260505-0018',asset:'林下区块2·灵芝批次3',applicant:'灵芝堂种植基地',bank:'建设银行',amount:1260,ltv:60,term:2,date:'2026-05-05',status:'pending',sv:94.0,value:2100,certOk:true,dataOk:true,hash:'0xd2e4f6a8b0c1d3e5'},
+];
+
+const ltvLoans=[
+  {cat:'ginseng',id:'LK-2026-0012',asset:'D地块·10年参龄',bank:'吉林银行',amount:765,ltvCurrent:60.0,ltvLimit:60,sv:85.0,value:1275,status:'normal',alerts:0},
+  {cat:'ginseng',id:'LK-2026-0008',asset:'G地块·11年参龄',bank:'吉林银行',amount:890,ltvCurrent:52.3,ltvLimit:60,sv:90.5,value:1700,status:'normal',alerts:0},
+  {cat:'ginseng',id:'LK-2025-0045',asset:'F地块·6年参龄',bank:'农业银行',amount:320,ltvCurrent:64.8,ltvLimit:60,sv:68.2,value:494,status:'warning',alerts:1},
+  {cat:'fungi',id:'LK-2026-0019',asset:'林下区块2·灵芝批次3',bank:'建设银行',amount:1260,ltvCurrent:55.0,ltvLimit:60,sv:94.0,value:2100,status:'normal',alerts:0},
+  {cat:'fungi',id:'LK-2025-0032',asset:'桑黄批次2',bank:'吉林银行',amount:580,ltvCurrent:62.5,ltvLimit:60,sv:81.0,value:928,status:'warning',alerts:2},
+];
+
+const alertItems=[{lv:'R',title:'D-05声振传感器检测异常振动信号',loc:'D地块',time:'02:55',action:'待处置'},
+  {lv:'O',title:'F地块LTV升至64.8%超过60%上限',loc:'F地块',time:'10:30',action:'已通知客户经理'},
+  {lv:'Y',title:'B-07地块含水量连续下降',loc:'B地块',time:'08:40',action:'已标记'}];
+
+function switchPage(page){
+  currentPage=page;
+  document.querySelectorAll('.sm-item').forEach(el=>el.classList.remove('active'));
+  const nav=document.querySelector(`[data-page="${page}"]`);
+  if(nav) nav.classList.add('active');
+  if(page==='overview') renderOverview();
+  else if(page==='review') renderReview();
+  else if(page==='history') renderHistory();
+  else if(page==='ltv') renderLTV();
+  else if(page==='alerts') renderAlerts();
+  else if(page==='verify') renderVerify();
+  else if(page==='ltvcalc') renderLTVCalc();
+  else if(page.startsWith('detail-')) renderDetail(page.substring(7));
+}
+
+function renderOverview(){
+  var apps=filteredApps();var loans=filteredLoans();
+  const pendingCount=apps.filter(a=>a.status==='pending').length;
+  const warnCount=loans.filter(l=>l.status==='warning').length;
+  const totalLoan=loans.reduce((s,l)=>s+l.amount,0);
+  mainEl.innerHTML=`
+    <div class="breadcrumb">银行工作台 <span>/ 概览</span></div>
+    <div class="page-hdr"><h2>工作台概览</h2><span style="font-size:12px;color:var(--text-muted)">数据更新于 ${new Date().toLocaleString('zh-CN')}</span></div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="st-label">待审批申请</div><div class="st-val">${pendingCount}<span style="font-size:14px;color:var(--text-secondary)"> 笔</span></div><div class="st-sub">共${apps.length}笔融资申请</div></div>
+      <div class="stat-card"><div class="st-label">在押贷款余额</div><div class="st-val">¥${totalLoan.toLocaleString()}<span style="font-size:14px;color:var(--text-secondary)"> 万</span></div><div class="st-sub">${loans.length}笔正常 · ${warnCount}笔预警</div></div>
+      <div class="stat-card"><div class="st-label">平均LTV</div><div class="st-val">${loans.length?(loans.reduce((s,l)=>s+l.ltvCurrent,0)/loans.length).toFixed(1):'--'}<span style="font-size:14px;color:var(--text-secondary)">%</span></div><div class="st-sub st-up">整体风险可控</div></div>
+      <div class="stat-card"><div class="st-label">链上存证查验</div><div class="st-val">128<span style="font-size:14px;color:var(--text-secondary)"> 万条</span></div><div class="st-sub">FISCO BCOS五方节点</div></div>
+    </div>
+    <div class="card"><div class="card-hdr">全流程概览 <span style="font-weight:400;font-size:11px;color:var(--text-muted)">| 绿色=已完成 蓝色=当前步骤 灰色=待完成</span></div>
+      <div class="card-body">${renderFlowBar('银行')}</div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <div class="card" style="flex:3">
+        <div class="card-hdr">待审批融资申请 <a href="javascript:switchPage('review')" style="font-size:12px;font-weight:400">全部</a></div>
+        <div class="card-body nopad">
+          <table class="data-table"><thead><tr><th>申请编号</th><th>资产</th><th>申请人</th><th>金额(万)</th><th>LTV</th><th>提交日期</th><th>操作</th></tr></thead>
+            <tbody>${apps.filter(a=>a.status==='pending').map(a=>`<tr>
+              <td style="color:var(--primary)">${a.id}</td><td>${a.asset}</td><td>${a.applicant}</td><td>¥${a.amount}</td><td>${a.ltv}%</td><td>${a.date}</td>
+              <td><button class="btn btn-primary btn-sm" onclick="switchPage('detail-${a.id}')">审查</button></td>
+            </tr>`).join('')}</tbody></table>
+        </div>
+      </div>
+      <div class="card" style="flex:2">
+        <div class="card-hdr">贷后预警 <a href="javascript:switchPage('alerts')" style="font-size:12px;font-weight:400">全部</a></div>
+        <div class="card-body nopad">${alertItems.map(a=>`
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px" onclick="switchPage('alerts')">
+            <span style="width:6px;height:6px;border-radius:50%;background:${a.lv==='R'?'var(--danger)':a.lv==='O'?'var(--warn)':'#f0c040'};flex-shrink:0"></span>
+            <span style="flex:1">${a.title}</span><span style="color:var(--text-muted);font-size:11px">${a.time}</span>
+            <span class="tag tag-${a.action==='待处置'?'red':'gray'}">${a.action}</span>
+          </div>`).join('')}</div>
+      </div>
+    </div>`;
+}
+
+function renderDetail(id){
+  var a=applications.find(function(x){return x.id===id});if(!a)return switchPage('review');
+  var isFungi=a.cat==='fungi';var val=valuationForCategory();
+  mainEl.innerHTML=`
+    <div class="breadcrumb">贷款审批 <span>/ ${a.id}</span></div>
+    <div class="page-hdr"><h2>融资申请审查</h2><button class="btn btn-default" onclick="switchPage('review')">返回列表</button></div>
+    <div style="display:flex;gap:12px">
+      <div class="card" style="flex:1">
+        <div class="card-hdr">申请信息</div>
+        <div class="card-body">
+          <table class="data-table" style="border:1px solid var(--border)"><tbody>
+            <tr><td style="width:120px;color:var(--text-secondary)">申请编号</td><td style="font-weight:500">${a.id}</td></tr>
+            <tr><td style="color:var(--text-secondary)">申请人</td><td>${a.applicant}</td></tr>
+            <tr><td style="color:var(--text-secondary)">资产名称</td><td>${a.asset}</td></tr>
+            <tr><td style="color:var(--text-secondary)">申请金额</td><td style="font-weight:600;color:var(--primary);font-size:16px">¥${a.amount}万</td></tr>
+            <tr><td style="color:var(--text-secondary)">申请LTV</td><td>${a.ltv}%</td></tr>
+            <tr><td style="color:var(--text-secondary)">贷款期限</td><td>${a.term}年</td></tr>
+            <tr><td style="color:var(--text-secondary)">提交日期</td><td>${a.date}</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="card" style="flex:1.5">
+        <div class="card-hdr">AI价值参考与存证验证</div>
+        <div class="card-body">
+          <div style="display:flex;gap:16px;margin-bottom:12px">
+            <div style="flex:1;padding:12px;background:#fafbfc;border-radius:4px;text-align:center">
+              <div style="font-size:11px;color:var(--text-muted)">AI${isFungi?'品级率':'存活率'}</div>
+              <div style="font-size:20px;font-weight:700;color:${a.sv>80?'var(--success)':'var(--warn)'}">${a.sv}%</div>
+            </div>
+            <div style="flex:1;padding:12px;background:#fafbfc;border-radius:4px;text-align:center">
+              <div style="font-size:11px;color:var(--text-muted)">AI公允价值参考</div>
+              <div style="font-size:20px;font-weight:700;color:var(--primary)">¥${a.value}万</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">公允值V_t</div>
+            </div>
+            <div style="flex:1;padding:12px;background:#fafbfc;border-radius:4px;text-align:center">
+              <div style="font-size:11px;color:var(--text-muted)">流动性折扣后</div>
+              <div style="font-size:20px;font-weight:700">¥${Math.floor(a.value*(1-(val.dLiquidity||0.15)))}万</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">d_liquidity=${((val.dLiquidity||0.15)*100).toFixed(0)}%</div>
+            </div>
+            <div style="flex:1;padding:12px;background:#fafbfc;border-radius:4px;text-align:center">
+              <div style="font-size:11px;color:var(--text-muted)">建议担保价值区间</div>
+              <div style="font-size:18px;font-weight:700;color:var(--success)">¥${Math.floor(a.value*(1-(val.dQuality||0.08))*(1-(val.dLiquidity||0.15))*(val.hPledge||0.60))}万</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">含品质+流动性+质押率三重折扣</div>
+            </div>
+            <div style="flex:1;padding:12px;background:#fafbfc;border-radius:4px;text-align:center">
+              <div style="font-size:11px;color:var(--text-muted)">建议担保价值区间</div>
+              <div style="font-size:20px;font-weight:700">${a.ltv}%</div>
+            </div>
+          </div>
+          <div style="padding:8px 12px;background:${a.certOk?'#f0faf5':'#fef3e6'};border-radius:4px;margin-bottom:6px;font-size:12px">
+            ${a.certOk?'✓':'!'} ${isFungi?'经营权证':'林权证'}核验: ${a.certOk?(isFungi?'已通过农业农村局登记系统交叉验证':'已通过不动产登记系统交叉验证'):'待补充'}
+          </div>
+          <div style="padding:8px 12px;background:${a.dataOk?'#f0faf5':'#fef3e6'};border-radius:4px;margin-bottom:6px;font-size:12px">
+            ${a.dataOk?'✓':'!'} 传感器数据完整性: ${a.dataOk?(isFungi?'微气候+菌椴探针+近红外数据完整，无断点':'连续365天时序数据完整，无断点'):'数据缺失'}
+          </div>
+          <div style="padding:8px 12px;background:#f0faf5;border-radius:4px;margin-bottom:6px;font-size:12px;font-family:monospace;cursor:pointer" onclick="showToast('完整哈希: ${a.hash}\nNTS时间戳: ${a.date}T10:23:45+08:00\n存证节点: FISCO BCOS (5方共识)\n区块高度: #1,284,5${Math.floor(Math.random()*90+10)}')">
+            ✓ 区块链存证: ${a.hash.slice(0,20)}... <span style="color:var(--primary);cursor:pointer">点击查验</span>
+          </div>
+          <div style="padding:8px 12px;background:${val.signed?'#f0faf5':'#fef3e6'};border-radius:4px;margin-bottom:6px;font-size:12px">
+            ${val.signed?'✓':'!'} 估值报告签署: ${val.signed?val.signer+' | '+val.signTime:'等待评估师签署电子报告'}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <div class="card" style="flex:1">
+        <div class="card-hdr">LTV试算</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">贷款金额（万元）</label><input class="form-input" type="number" value="${a.amount}" id="calc-amount" oninput="updateLTVCalc(${a.value})"></div>
+            <div class="form-group"><label class="form-label">当前评估价值（万元）</label><input class="form-input" type="number" value="${a.value}" disabled></div>
+            <div class="form-group"><label class="form-label">试算LTV</label><input class="form-input" type="text" id="calc-ltv" value="${a.ltv}%" disabled style="font-weight:700;color:${a.ltv<=60?'var(--success)':a.ltv<=70?'var(--warn)':'var(--danger)'}"></div>
+          </div>
+          <div style="margin-top:4px"><div class="form-label" style="font-size:11px">LTV风险区间</div>
+            <div class="ltv-bar"><div class="fill" id="ltv-fill-bar" style="width:${a.ltv}%;background:${a.ltv<=60?'var(--success)':a.ltv<=70?'var(--warn)':'var(--danger)'}"></div>
+              <div class="marker" style="left:60%"></div><div class="marker-label" style="left:60%">三重折扣后质押上限60%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-danger" onclick="handleReject('${a.id}')">拒绝</button>
+      <button class="btn btn-default" onclick="showToast('已要求补充材料:\n1. 近三年采挖记录\n2. 地块周边环境评估报告\n补充通知已推送至申请人','')">要求补充材料</button>
+      ${val.signed
+        ? '<button class="btn btn-success" onclick="handleApprove(\''+a.id+'\')">批准放款</button>'
+        : '<button class="btn btn-default" disabled style="cursor:not-allowed" onclick="showToast(\'估值报告尚未签署，请等待评估师完成电子签章\',\'error\')">等待评估师签章</button>'
+      }
+    </div>`;
+}
+
+function updateLTVCalc(value){
+  const amt=parseFloat(document.getElementById('calc-amount').value)||0;
+  const ltv=((amt/value)*100).toFixed(1);
+  const el=document.getElementById('calc-ltv');const bar=document.getElementById('ltv-fill-bar');
+  el.value=ltv+'%';
+  el.style.color=ltv<=60?'var(--success)':ltv<=70?'var(--warn)':'var(--danger)';
+  bar.style.width=Math.min(ltv,100)+'%';
+  bar.style.background=ltv<=60?'var(--success)':ltv<=70?'var(--warn)':'var(--danger)';
+}
+
+function handleApprove(id){
+  const a=applications.find(x=>x.id===id);
+  showToast(`放款审批已提交\n\n申请编号: ${id}\n金额: ¥${a.amount}万\n下一节点: 信贷委员会终审\n预计完成: 2个工作日内\n\n系统已自动:\n- 生成贷款合同草稿\n- 通知担保机构\n- 设置贷后LTV监控阈值(60%)\n- 上链存证审批记录\n- 已通知资产持有方`,'success');
+  a.status='approved';
+  completeBankApproval();
+  setTimeout(()=>switchPage('review'),3000);
+}
+
+function handleReject(id){
+  showToast(`申请 ${id} 已拒绝\n\n拒绝原因已记录，系统将自动通知申请人。\n请在备注中填写具体原因。`,'error');
+}
+
+function renderReview(){
+  mainEl.innerHTML=`
+    <div class="breadcrumb">贷款审批 <span>/ 待审批申请</span></div>
+    <div class="page-hdr"><h2>待审批融资申请</h2></div>
+    <div class="card"><div class="card-body nopad">
+      <table class="data-table"><thead><tr><th>申请编号</th><th>资产</th><th>申请人</th><th>金额(万)</th><th>LTV</th><th>AI公允价值<br>参考(万)</th><th>存证</th><th>提交日期</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>${filteredApps().map(a=>`<tr>
+          <td style="color:var(--primary)">${a.id}</td><td>${a.asset}</td><td>${a.applicant}</td><td>¥${a.amount}</td>
+          <td>${a.ltv}%</td><td>¥${a.value}</td>
+          <td>${a.dataOk?'<span class="tag tag-green">完整</span>':'<span class="tag tag-orange">缺失</span>'}</td>
+          <td>${a.date}</td>
+          <td>${a.status==='pending'?'<span class="tag tag-orange">待审批</span>':'<span class="tag tag-blue">已审批</span>'}</td>
+          <td><button class="btn btn-outline btn-sm" onclick="switchPage('detail-${a.id}')">${a.status==='pending'?'审查':'查看'}</button></td>
+        </tr>`).join('')}</tbody></table>
+    </div></div>`;
+}
+
+function renderHistory(){
+  mainEl.innerHTML=`
+    <div class="breadcrumb">贷款审批 <span>/ 审批历史</span></div>
+    <div class="page-hdr"><h2>审批历史</h2></div>
+    <div class="card"><div class="card-body nopad">
+      <table class="data-table"><thead><tr><th>申请编号</th><th>资产</th><th>金额</th><th>审批结果</th><th>审批人</th><th>审批日期</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--primary)">LA-20260301-0015</td><td>H地块·15年参龄</td><td>¥1,200万</td><td><span class="tag tag-green">已批准</span></td><td>王行长</td><td>2026-03-08</td><td><button class="btn btn-outline btn-sm" onclick="showToast('审批记录已上链存证\n哈希: 0xe5f6a7b8c9d0e1f2\nNTS时间戳: 2026-03-08T14:22:31+08:00','')">查看</button></td></tr>
+          <tr><td style="color:var(--primary)">LA-20260220-0012</td><td>K地块·6年参龄</td><td>¥380万</td><td><span class="tag tag-red">已拒绝</span></td><td>李副行长</td><td>2026-02-25</td><td><button class="btn btn-outline btn-sm" onclick="showToast('拒绝原因: AI估值数据不完整，传感器部署未达标','')">查看</button></td></tr>
+          <tr><td style="color:var(--primary)">LA-20260110-0008</td><td>J地块·9年参龄</td><td>¥650万</td><td><span class="tag tag-green">已批准</span></td><td>王行长</td><td>2026-01-18</td><td><button class="btn btn-outline btn-sm" onclick="showToast('审批记录已上链存证','')">查看</button></td></tr>
+        </tbody></table>
+    </div></div>`;
+}
+
+function renderLTV(){
+  setTimeout(()=>{
+    const el=document.getElementById('ltv-chart');
+    if(el&&!el._chart){
+      el._chart=echarts.init(el);
+      el._chart.setOption({
+        grid:{left:42,right:10,top:10,bottom:20},
+        xAxis:{type:'category',data:['1月','2月','3月','4月','5月'],axisLabel:{fontSize:10}},
+        yAxis:{type:'value',name:'LTV %',max:80,axisLabel:{fontSize:10},splitLine:{lineStyle:{type:'dashed',color:'#e5e7eb'}}},
+        series:[
+          {name:'LK-2026-0012(D地块)',type:'line',data:[58,57.5,58.2,59.1,60.0],smooth:true,symbol:'circle',symbolSize:6,lineStyle:{color:'#1a6fff',width:2}},
+          {name:'LK-2025-0045(F地块)',type:'line',data:[58,60.2,62.1,63.5,64.8],smooth:true,symbol:'circle',symbolSize:6,lineStyle:{color:'#e34d59',width:2}},
+        ],
+        markLine:{silent:true,symbol:'none',lineStyle:{color:'#e34d59',type:'dashed',width:1.5},data:[{yAxis:60,label:{formatter:'LTV上限60%',fontSize:9}}]},
+        legend:{bottom:0,textStyle:{fontSize:9},itemWidth:12,itemHeight:2},tooltip:{trigger:'axis'}
+      });
+    }
+  },200);
+
+  mainEl.innerHTML=`
+    <div class="breadcrumb">贷后管理 <span>/ LTV监控</span></div>
+    <div class="page-hdr"><h2>贷后LTV监控</h2><span style="color:var(--text-muted);font-size:12px">LTV上限: 60% | 已含品质折扣+流动性折扣 | AI公允价值参考</span></div>
+    <div class="card"><div class="card-hdr">LTV趋势图</div><div class="card-body"><div id="ltv-chart" style="width:100%;height:240px"></div></div></div>
+    <div class="card"><div class="card-body nopad">
+      <table class="data-table"><thead><tr><th>贷款编号</th><th>资产</th><th>贷款金额(万)</th><th>评估价值(万)</th><th>当前LTV</th><th>LTV上限</th><th>风险状态</th><th>操作</th></tr></thead>
+        <tbody>${filteredLoans().map(l=>`<tr>
+          <td style="color:var(--primary)">${l.id}</td><td>${l.asset}</td><td>¥${l.amount}</td><td>¥${l.value}</td>
+          <td style="font-weight:700;color:${l.ltvCurrent>l.ltvLimit?'var(--danger)':l.ltvCurrent>l.ltvLimit*0.9?'var(--warn)':'var(--success)'}">${l.ltvCurrent}%</td>
+          <td>${l.ltvLimit}%</td>
+          <td>${l.status==='normal'?'<span class="tag tag-green">正常</span>':'<span class="tag tag-red">预警</span>'}</td>
+          <td>
+            ${l.status==='warning'?`<button class="btn btn-danger btn-sm" onclick="showToast('LTV预警处置流程\\n\\n1. 系统自动冻结新增额度\\n2. 通知客户经理: 李经理(138xxxx)\n3. 通知担保机构: 吉林农担\\n4. 要求借款人补充保证金或追加担保\\n5. 7个工作日内未处置将触发贷后清收程序','')">处置</button>`:`<button class="btn btn-outline btn-sm" onclick="showToast('LTV趋势正常，无需处置','')">查看</button>`}
+          </td>
+        </tr>`).join('')}</tbody></table>
+    </div></div>`;
+}
+
+function renderAlerts(){
+  mainEl.innerHTML=`
+    <div class="breadcrumb">贷后管理 <span>/ 预警处置</span></div>
+    <div class="page-hdr"><h2>预警处置</h2></div>
+    <div class="card"><div class="card-body nopad">
+      ${alertItems.map(a=>`
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:flex-start;gap:12px">
+          <span style="width:6px;height:6px;border-radius:50%;background:${a.lv==='R'?'var(--danger)':a.lv==='O'?'var(--warn)':'#f0c040'};flex-shrink:0;margin-top:5px"></span>
+          <div style="flex:1">
+            <div style="font-weight:500;margin-bottom:2px">${a.title}</div>
+            <div style="font-size:12px;color:var(--text-secondary)">位置: ${a.loc} | 时间: ${a.time}</div>
+          </div>
+          <span class="tag tag-${a.action==='待处置'?'red':'gray'}">${a.action}</span>
+          ${a.action==='待处置'?`
+            <button class="btn btn-outline btn-sm" onclick="showToast('预警处置步骤:\n\n1. 标记为【处理中】\n2. 通知现场巡检人员核实\n3. 若确认为风险事件，启动贷后处置流程\n4. 处置完成后更新预警状态\n\n当前已通知: 客户经理李经理(138xxxx)\n通知时间: ${new Date().toLocaleString('zh-CN')}','success')">开始处置</button>
+          `:`<button class="btn btn-default btn-sm" onclick="showToast('处置记录已查看','')">查看详情</button>`}
+        </div>
+      `).join('')}
+    </div></div>`;
+}
+
+function renderVerify(){
+  mainEl.innerHTML=`
+    <div class="breadcrumb">工具 <span>/ 存证查验</span></div>
+    <div class="page-hdr"><h2>区块链存证查验</h2></div>
+    <div class="card"><div class="card-body">
+      <div class="form-group"><label class="form-label">输入存证哈希值或资产编号进行查验</label></div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input class="form-input" style="flex:1" placeholder="例: 0xa3f2b8c1... 或 CB-2024-A03" id="verify-input">
+        <button class="btn btn-primary" onclick="doVerify()">链上查验</button>
+      </div>
+      <div id="verify-result" style="display:none;padding:16px;background:#f0faf5;border-radius:4px">
+        <div style="font-weight:600;color:var(--success);margin-bottom:8px">✓ 存证验证通过</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.8" id="verify-detail"></div>
+      </div>
+    </div></div>`;
+}
+
+function doVerify(){
+  const input=document.getElementById('verify-input').value.trim();
+  if(!input){showToast('请输入哈希值或资产编号','error');return;}
+  const result=document.getElementById('verify-result');const detail=document.getElementById('verify-detail');
+  result.style.display='block';
+  detail.innerHTML=`
+    查询值: ${input}<br>
+    链上状态: 已确认<br>
+    共识节点: 5/5 (FISCO BCOS PBFT)<br>
+    NTS时间戳: ${new Date().toISOString().replace('T',' ').slice(0,19)}<br>
+    区块高度: #1,284,5${Math.floor(Math.random()*90+10)}<br>
+    上链节点: 平台运营方 + 吉林银行 + 吉林农担 + 公证处 + 林业主管部门<br>
+    数据指纹: 与链上记录一致，未被篡改`;
+  showToast('存证查验完成：数据完整，未被篡改','success');
+}
+
+function renderLTVCalc(){
+  mainEl.innerHTML=`
+    <div class="breadcrumb">工具 <span>/ LTV试算</span></div>
+    <div class="page-hdr"><h2>LTV试算工具</h2></div>
+    <div class="card"><div class="card-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">AI公允价值参考（万元）</label><input class="form-input" type="number" value="1000" id="t-value" oninput="runLTVCalc()"></div>
+        <div class="form-group"><label class="form-label">申请贷款金额（万元）</label><input class="form-input" type="number" value="550" id="t-amount" oninput="runLTVCalc()"></div>
+        <div class="form-group"><label class="form-label">试算LTV</label><input class="form-input" type="text" id="t-ltv-result" value="55.0%" disabled style="font-weight:700;font-size:16px"></div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="form-label" style="font-size:11px">风险区间</div>
+        <div class="ltv-bar"><div class="fill" id="t-ltv-bar" style="width:55%;background:var(--success)"></div>
+          <div class="marker" style="left:60%"></div><div class="marker-label" style="left:60%">三重折扣后质押上限60%</div>
+        </div>
+      </div>
+      <div id="ltv-advice" style="margin-top:12px;padding:10px 14px;background:#f0faf5;border-radius:4px;font-size:13px;color:var(--success)"></div>
+    </div></div>`;
+  runLTVCalc();
+}
+
+function runLTVCalc(){
+  const v=parseFloat(document.getElementById('t-value').value)||0;
+  const a=parseFloat(document.getElementById('t-amount').value)||0;
+  const ltv=v>0?((a/v)*100).toFixed(1):0;
+  document.getElementById('t-ltv-result').value=ltv+'%';
+  const bar=document.getElementById('t-ltv-bar');const c=ltv<=60?'var(--success)':ltv<=70?'var(--warn)':'var(--danger)';
+  bar.style.width=Math.min(ltv,100)+'%';bar.style.background=c;
+  document.getElementById('t-ltv-result').style.color=c;
+  const advice=document.getElementById('ltv-advice');
+  if(ltv<=55){advice.style.background='#f0faf5';advice.style.color='var(--success)';advice.textContent='LTV处于安全区间，可正常放款。建议放款后持续监控月度价值参考更新。';}
+  else if(ltv<=60){advice.style.background='#fef3e6';advice.style.color='var(--warn)';advice.textContent='LTV接近上限，建议适当降低贷款金额或要求借款人提供额外增信措施（如联保、补充保证金）。';}
+  else{advice.style.background='#fde8ea';advice.style.color='var(--danger)';advice.textContent='LTV超过60%上限，系统不允许放款。请将贷款金额降至评估价值的60%以下。';}
+}
+
+let toastTimer;
+function showToast(msg,type){
+  const el=document.getElementById('toast');el.textContent=msg;el.className=type||'';
+  el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),4000);
+}
+
+renderOverview();
+</script>
+</body>
+</html>
