@@ -478,6 +478,24 @@
   const TOKEN = '__GITHUB_TOKEN__';
   const AUTH = { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
 
+  // Helper: safe base64 decode (handles BOM and Unicode)
+  function b64decode(b64) {
+    const clean = b64.replace(/\s/g, '');
+    const bin = atob(clean);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    let str = new TextDecoder().decode(bytes);
+    if (str.charCodeAt(0) === 0xFEFF) str = str.slice(1);
+    return JSON.parse(str);
+  }
+  function b64encode(obj) {
+    const str = JSON.stringify(obj);
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
   let selected = null;
   let hasVoted = false;
 
@@ -501,13 +519,12 @@
       // Read current votes
       const r1 = await fetch(API, { headers: AUTH });
       const file = await r1.json();
-      const cur = JSON.parse(atob(file.content));
+      const cur = b64decode(file.content);
       cur[selected] = (cur[selected] || 0) + 1;
 
-      // Write back
       const body = JSON.stringify({
         message: 'vote: ' + selected,
-        content: btoa(unescape(encodeURIComponent(JSON.stringify(cur)))),
+        content: b64encode(cur),
         sha: file.sha
       });
       const r2 = await fetch(API, { method: 'PUT', headers: { ...AUTH, 'Content-Type': 'application/json' }, body });
@@ -535,7 +552,7 @@
     try {
       const r = await fetch(API, { headers: AUTH });
       const file = await r.json();
-      const data = JSON.parse(atob(file.content));
+      const data = b64decode(file.content);
       const total = data.A + data.B + data.C + data.D;
       if (total > 0) showResults(data);
       if (voted) {
