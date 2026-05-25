@@ -472,7 +472,12 @@
 </div>
 
 <script>
-  const API = 'https://jsonblob.com/api/jsonBlob/019e5dae-32ce-7de9-aeb8-2452b544217e';
+  const OWNER = 'bbbhbb256-crypto';
+  const REPO = 'prefrontal-vote';
+  const API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/votes.json`;
+  const TOKEN = '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';
+  const AUTH = { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+
   let selected = null;
   let hasVoted = false;
 
@@ -490,16 +495,24 @@
     document.getElementById('votedTag').style.display = 'block';
     document.getElementById('voteBtn').style.display = 'none';
     document.querySelectorAll('.option').forEach(el => el.style.pointerEvents = 'none');
-
     localStorage.setItem('prefrontal_voted', selected);
 
     try {
-      // Fetch latest, increment, send back
-      const r1 = await fetch(API);
-      const data = await r1.json();
-      data[selected] = (data[selected] || 0) + 1;
-      await fetch(API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      showResults(data);
+      // Read current votes
+      const r1 = await fetch(API, { headers: AUTH });
+      const file = await r1.json();
+      const cur = JSON.parse(atob(file.content));
+      cur[selected] = (cur[selected] || 0) + 1;
+
+      // Write back
+      const body = JSON.stringify({
+        message: 'vote: ' + selected,
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(cur)))),
+        sha: file.sha
+      });
+      const r2 = await fetch(API, { method: 'PUT', headers: { ...AUTH, 'Content-Type': 'application/json' }, body });
+      if (r2.ok) showResults(cur);
+      else document.getElementById('votedTag').textContent = '投票失败，请刷新重试';
     } catch (e) {
       document.getElementById('votedTag').textContent = '网络异常，请刷新后查看结果';
     }
@@ -511,9 +524,8 @@
     document.getElementById('results').style.display = 'block';
     ['A','B','C','D'].forEach(letter => {
       const pct = Math.round(v[letter] / total * 100);
-      const bar = document.getElementById('bar' + letter);
-      bar.querySelector('.pct').textContent = pct + '%';
-      bar.querySelector('.result-fill').style.width = pct + '%';
+      document.getElementById('bar' + letter).querySelector('.pct').textContent = pct + '%';
+      document.getElementById('bar' + letter).querySelector('.result-fill').style.width = pct + '%';
     });
     document.getElementById('totalVotes').textContent = `共 ${total} 人参与投票`;
   }
@@ -521,9 +533,11 @@
   (async function init() {
     const voted = localStorage.getItem('prefrontal_voted');
     try {
-      const r = await fetch(API);
-      const data = await r.json();
-      showResults(data);
+      const r = await fetch(API, { headers: AUTH });
+      const file = await r.json();
+      const data = JSON.parse(atob(file.content));
+      const total = data.A + data.B + data.C + data.D;
+      if (total > 0) showResults(data);
       if (voted) {
         hasVoted = true;
         document.getElementById('votedTag').style.display = 'block';
