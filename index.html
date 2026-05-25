@@ -472,6 +472,7 @@
 </div>
 
 <script>
+  const API = 'https://jsonblob.com/api/jsonBlob/019e5dae-32ce-7de9-aeb8-2452b544217e';
   let selected = null;
   let hasVoted = false;
 
@@ -483,16 +484,25 @@
     document.getElementById('voteBtn').classList.add('active');
   }
 
-  function submitVote() {
+  async function submitVote() {
     if (!selected || hasVoted) return;
     hasVoted = true;
-    const stored = JSON.parse(localStorage.getItem('prefrontal_votes') || '{"A":0,"B":0,"C":0,"D":0}');
-    stored[selected]++;
-    localStorage.setItem('prefrontal_votes', JSON.stringify(stored));
-    showResults(stored);
     document.getElementById('votedTag').style.display = 'block';
     document.getElementById('voteBtn').style.display = 'none';
     document.querySelectorAll('.option').forEach(el => el.style.pointerEvents = 'none');
+
+    localStorage.setItem('prefrontal_voted', selected);
+
+    try {
+      // Fetch latest, increment, send back
+      const r1 = await fetch(API);
+      const data = await r1.json();
+      data[selected] = (data[selected] || 0) + 1;
+      await fetch(API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      showResults(data);
+    } catch (e) {
+      document.getElementById('votedTag').textContent = '网络异常，请刷新后查看结果';
+    }
   }
 
   function showResults(v) {
@@ -508,15 +518,25 @@
     document.getElementById('totalVotes').textContent = `共 ${total} 人参与投票`;
   }
 
-  (function init() {
-    const stored = JSON.parse(localStorage.getItem('prefrontal_votes') || '{"A":0,"B":0,"C":0,"D":0}');
-    const total = stored.A + stored.B + stored.C + stored.D;
-    if (total > 0) {
-      hasVoted = true;
-      showResults(stored);
-      document.getElementById('votedTag').style.display = 'block';
-      document.getElementById('voteBtn').style.display = 'none';
-      document.querySelectorAll('.option').forEach(el => el.style.pointerEvents = 'none');
+  (async function init() {
+    const voted = localStorage.getItem('prefrontal_voted');
+    try {
+      const r = await fetch(API);
+      const data = await r.json();
+      showResults(data);
+      if (voted) {
+        hasVoted = true;
+        document.getElementById('votedTag').style.display = 'block';
+        document.getElementById('voteBtn').style.display = 'none';
+        document.querySelectorAll('.option').forEach(el => el.style.pointerEvents = 'none');
+      }
+    } catch (e) {
+      if (voted) {
+        hasVoted = true;
+        document.getElementById('votedTag').style.display = 'block';
+        document.getElementById('voteBtn').style.display = 'none';
+        document.querySelectorAll('.option').forEach(el => el.style.pointerEvents = 'none');
+      }
     }
   })();
 </script>
