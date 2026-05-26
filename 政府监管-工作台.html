@@ -85,9 +85,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 <div id="topnav">
   <span class="sys-name">长白山金融化平台<span class="ver">v1.0  ·  政府监管端</span></span>
   <span class="tn-item active">产业监管</span>
-  <span class="tn-item" onclick="window.open('林企参农-工作台.html','_blank')">资产持有方</span>
-  <span class="tn-item" onclick="window.open('银行-工作台.html','_blank')">银行端</span>
-  <span class="tn-item" onclick="window.open('担保保险-工作台.html','_blank')">担保/保险端</span>
+  <span class="tn-item" onclick="window.open('林企参农-工作台.html','changbai-forestry')">资产持有方</span>
+  <span class="tn-item" onclick="window.open('银行-工作台.html','changbai-bank')">银行端</span>
+  <span class="tn-item" onclick="window.open('评估师-工作台.html','changbai-appraiser')">评估师端</span>
+  <span class="tn-item" onclick="window.open('担保保险-工作台.html','changbai-insurance')">担保/保险端</span>
   <span class="tn-right">
     <span class="tn-user">吉林省地方金融监管局 · 林业产业处 &#9662;</span>
   </span>
@@ -314,6 +315,7 @@ function renderCategory(){
 
 function renderCredit(){
   var d=getCatData();var r=d.regions;
+  var tot=getAggregated();
   mainEl.innerHTML=
     '<div class="breadcrumb">信贷投放监测 <span>/ 信贷投放分析</span></div>'+
     '<div class="page-hdr"><h2>信贷投放分析 —— '+($S.category==='fungi'?'桑黄/灵芝':'林下参')+'</h2><span style="font-size:12px;color:var(--text-muted)">季度数据 | 合作银行: 吉林银行、农业银行、建设银行</span></div>'+
@@ -332,7 +334,6 @@ function renderCredit(){
           '<tr><td>建设银行</td><td>'+(Math.round(tot.assets*0.2))+'</td><td>¥'+(Math.round(tot.creditDeploy*0.2)).toLocaleString()+'</td><td>20%</td><td>52.1%</td><td>'+(Math.round(tot.alerts30d*0.2))+'次</td></tr>'+
         '</tbody></table>'+
     '</div></div>';
-  var tot=getAggregated();
   setTimeout(function(){
     var el=document.getElementById('bank-chart');
     if(el&&!el._c){
